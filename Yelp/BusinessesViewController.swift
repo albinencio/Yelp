@@ -8,9 +8,10 @@
 
 import UIKit
 
-class BusinessesViewController: UIViewController, UITableViewDataSource, UITableViewDelegate {
+class BusinessesViewController: UIViewController, UITableViewDataSource, UITableViewDelegate, UISearchBarDelegate, UIScrollViewDelegate {
   
   var businesses: [Business]!
+  var isMoreDataLoading = false
   
   @IBOutlet weak var tableView: UITableView!
   
@@ -19,9 +20,16 @@ class BusinessesViewController: UIViewController, UITableViewDataSource, UITable
     
     tableView.delegate = self
     tableView.dataSource = self
-    tableView.rowHeight = 150 //TODO
+    tableView.separatorInset = .zero
+    tableView.rowHeight = UITableViewAutomaticDimension
+    tableView.estimatedRowHeight = 120
     
-    Business.searchWithTerm(term: "Thai", completion: { (businesses: [Business]?, error: Error?) -> Void in
+    let searchBar = UISearchBar()
+    searchBar.delegate = self
+    searchBar.sizeToFit()
+    navigationItem.titleView = searchBar
+    
+    /* Business.searchWithTerm(term: "Restaurants", completion: { (businesses: [Business]?, error: Error?) -> Void in
       
       self.businesses = businesses
       self.tableView.reloadData()
@@ -32,20 +40,32 @@ class BusinessesViewController: UIViewController, UITableViewDataSource, UITable
         }
       }
       
+    }) */
+    
+    Business.searchWithTerm(term: "Restaurants", sort: .distance, categories: ["mediterranean", "italian", "asianfusion", "burgers"], deals: true) { (businesses: [Business]!, error: Error!) -> Void in
+      
+      self.businesses = businesses
+      self.tableView.reloadData()
+      
+      for business in businesses {
+        print(business.name!)
+        print(business.address!)
+      }
     }
-    )
-    
-    /* Example of Yelp search with more search options specified
-     Business.searchWithTerm("Restaurants", sort: .distance, categories: ["asianfusion", "burgers"], deals: true) { (businesses: [Business]!, error: Error!) -> Void in
-     self.businesses = businesses
-     
-     for business in businesses {
-     print(business.name!)
-     print(business.address!)
-     }
-     }
-     */
-    
+  }
+  
+  func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
+    Business.searchWithTerm(term: searchText, completion: { (businesses: [Business]?, error: Error?) -> Void in
+      
+      self.businesses = businesses
+      self.tableView.reloadData()
+      if let businesses = businesses {
+        for business in businesses {
+          print(business.name!)
+          print(business.address!)
+        }
+      }
+    })
   }
   
   func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
@@ -63,6 +83,43 @@ class BusinessesViewController: UIViewController, UITableViewDataSource, UITable
     
     return cell
   }
+  
+  /* func scrollViewDidScroll(_ scrollView: UIScrollView) {
+    if (!isMoreDataLoading) {
+      // Calculate the position of one screen length before the bottom of the results
+      let scrollViewContentHeight = tableView.contentSize.height
+      let scrollOffsetThreshold = scrollViewContentHeight - tableView.bounds.size.height
+      
+      // When the user has scrolled past the threshold, start requesting
+      if(scrollView.contentOffset.y > scrollOffsetThreshold && tableView.isDragging) {
+        isMoreDataLoading = true
+        
+        loadMoreData()
+      }
+    }
+  }
+  
+  func loadMoreData() {
+    
+    // ... Create the NSURLRequest (myRequest) ...
+    
+    // Configure session so that completion handler is executed on main UI thread
+    let session = URLSession(configuration: URLSessionConfiguration.default,
+                             delegate:nil,
+                             delegateQueue:OperationQueue.main
+    )
+    let task : URLSessionDataTask = session.dataTask(with: myRequest, completionHandler: { (data, response, error) in
+      
+      // Update flag
+      self.isMoreDataLoading = false
+      
+      // ... Use the new data to update the data source ...
+      
+      // Reload the tableView now that there is new data
+      self.myTableView.reloadData()
+    })
+    task.resume()
+  } */
   
   override func didReceiveMemoryWarning() {
     super.didReceiveMemoryWarning()
